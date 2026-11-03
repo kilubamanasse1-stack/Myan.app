@@ -55,14 +55,17 @@ function showQR(g){let data=JSON.stringify({name:g.name,status:g.status,table:g.
 function decode(raw){
 let d;
 try{d=JSON.parse(raw)}catch(e){
-const lines=String(raw).replace(/\\r/g,'').split('\\n');
-const field=label=>{const line=lines.find(x=>new RegExp('^\\\\s*'+label+'\\\\s*:', 'i').test(x));return line?line.replace(/^\\s*[^:]+\\s*:/,'').trim():''};
+const lines=String(raw).split(/\r?\n/);
+const field=label=>{
+const line=lines.find(x=>x.trim().toLowerCase().startsWith(label.toLowerCase()+' :')||x.trim().toLowerCase().startsWith(label.toLowerCase()+':'));
+return line?line.slice(line.indexOf(':')+1).trim():'';
+};
 const name=field('Nom'),status=field('Statut'),table=field('Table');
-if(name&&status&&table!=='')d={name,status,table};
+if(name&&status&&table)d={name,status,table};
 }
 if(!d||!d.name||!d.status||d.table===undefined){$('scanresult').innerHTML='<div class="notice err">QR non reconnu : les informations Nom, Statut et Table sont introuvables.</div>';return}
 let g=guests.find(x=>identity(x)===identity(d));
-if(!g){$('scanresult').innerHTML='<div class="notice err">Invitation inconnue : '+esc(d.name)+'. Vérifiez que cet invité figure dans la liste importée ou ajoutez-le manuellement.</div>';return}
+if(!g){$('scanresult').innerHTML='<div class="notice err">Invitation inconnue : '+esc(d.name)+'. Vérifiez que cet invité figure dans la liste ou ajoutez-le manuellement.</div>';return}
 if(g.checked){$('scanresult').innerHTML='<div class="notice err">Déjà enregistré : '+esc(g.name)+' · Table '+esc(g.table||'—')+'.</div>';return}
 g.checked=true;g.checkedAt=new Date().toISOString();save();$('scanresult').innerHTML='<div class="notice ok">Entrée acceptée — '+esc(g.name)+'<br>'+esc(g.status)+' · Table '+esc(g.table||'—')+'</div>'
 }
